@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samanga Utilities · Requisition System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* ===== BASE STYLES ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body { background: #f4f7fc; display: flex; justify-content: center; padding: 1.5rem; }
+        .dashboard { max-width: 1440px; width: 100%; background: white; border-radius: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); display: flex; flex-wrap: wrap; overflow: hidden; }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar { width: 270px; background: #0b1a33; color: #e6edf5; padding: 2rem 1.2rem; display: flex; flex-direction: column; gap: 2rem; min-height: 100vh; flex-shrink: 0; }
+        .sidebar .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.3rem; color: white; border-bottom: 1px solid #2a3f5a; padding-bottom: 1.5rem; }
+        .sidebar .brand i { font-size: 1.8rem; color: #5b9bd5; }
+        .sidebar .nav-section { display: flex; flex-direction: column; gap: 0.3rem; }
+        .sidebar .nav-section .section-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: #8ea4c0; margin-top: 1rem; margin-bottom: 0.4rem; }
+        .sidebar .nav-item { display: flex; align-items: center; gap: 0.9rem; padding: 0.65rem 0.9rem; border-radius: 12px; color: #cbd8e9; font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: 0.15s; }
+        .sidebar .nav-item i { width: 1.6rem; font-size: 1.1rem; color: #7e97b9; }
+        .sidebar .nav-item.active, .sidebar .nav-item:hover { background: #1d3b5c; color: white; }
+        .sidebar .nav-item.active i, .sidebar .nav-item:hover i { color: #7bb3f0; }
+        .sidebar .logout { margin-top: auto; border-top: 1px solid #1f3450; padding-top: 1.5rem; }
+        .sidebar .logout .nav-item { color: #e0a7a7; }
+        .sidebar .logout .nav-item i { color: #d68585; }
+        
+        /* ===== MAIN CONTENT ===== */
+        .main-content { flex: 1; background: #f9fbfe; padding: 1.8rem 2.2rem 2.5rem; min-width: 0; }
+        .welcome-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.8rem; }
+        .welcome-header h1 { font-size: 1.6rem; font-weight: 600; color: #0b1a33; }
+        .welcome-header h1 small { font-weight: 400; font-size: 1rem; color: #4b5f7a; display: block; margin-top: 4px; }
+        .welcome-header .actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .btn-primary { background: #1a3a62; color: white; border: none; padding: 0.65rem 1.5rem; border-radius: 30px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.6rem; box-shadow: 0 6px 14px rgba(21,56,102,0.25); cursor: pointer; transition: 0.15s; white-space: nowrap; }
+        .btn-primary:hover { background: #0e2a4a; transform: scale(1.01); }
+        .btn-outline { background: transparent; color: #1a3a62; border: 2px solid #1a3a62; padding: 0.65rem 1.5rem; border-radius: 30px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 0.6rem; cursor: pointer; transition: 0.15s; white-space: nowrap; }
+        .btn-outline:hover { background: #1a3a62; color: white; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.2rem; margin-bottom: 2.5rem; }
+        .stat-card { background: white; border-radius: 18px; padding: 1rem 1.2rem; box-shadow: 0 4px 8px rgba(0,0,0,0.02); border: 1px solid #eef2f8; }
+        .stat-card .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; color: #4a637f; font-weight: 600; }
+        .stat-card .stat-number { font-size: 2rem; font-weight: 700; color: #0b1a33; margin-top: 0.2rem; }
+        .stat-card .stat-sub { font-size: 0.8rem; color: #3c6e9c; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.3rem; }
+        
+        .table-wrapper { background: white; border-radius: 24px; padding: 0.2rem 0 0.5rem; border: 1px solid #e9eef4; overflow-x: auto; margin-top: 0.3rem; }
+        .table-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem 0.5rem; flex-wrap: wrap; }
+        .table-header h3 { font-weight: 600; color: #1f2d44; font-size: 1.1rem; }
+        .table-header .badge-count { background: #e9eff6; padding: 0.2rem 0.8rem; border-radius: 30px; font-size: 0.8rem; color: #1f3b5c; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 780px; }
+        th { text-align: left; padding: 1rem 0.8rem 0.8rem 1.5rem; color: #406180; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; border-bottom: 1px solid #e3eaf2; }
+        td { padding: 0.9rem 0.8rem 0.9rem 1.5rem; border-bottom: 1px solid #edf2f8; color: #1d2b41; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.8rem; border-radius: 30px; font-size: 0.7rem; font-weight: 600; background: #eef2f8; color: #2a405e; }
+        .status-badge.approved { background: #dff0d8; color: #1d6b2c; }
+        .status-badge.pending { background: #fff3d6; color: #9e6d0e; }
+        .status-badge.inprogress { background: #dbeafe; color: #1a4c8a; }
+        .status-badge.completed { background: #d4edda; color: #0b5e2b; }
+        .action-link { color: #1e5b9e; font-weight: 500; text-decoration: none; background: #eef4fc; padding: 0.25rem 1rem; border-radius: 30px; font-size: 0.75rem; cursor: pointer; display: inline-block; border: none; }
+        .action-link:hover { background: #d4e2f5; }
+        .footer-note { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.5rem 0.5rem; font-size: 0.8rem; color: #546d8a; border-top: 1px solid #e5ecf4; margin-top: 0.8rem; flex-wrap: wrap; }
+        .copy { color: #6a83a2; font-size: 0.7rem; }
+        
+        @media (max-width: 820px) {
+            .sidebar { width: 100%; min-height: auto; flex-direction: row; flex-wrap: wrap; padding: 1.2rem; gap: 0.8rem; }
+            .sidebar .brand { border-bottom: none; padding-bottom: 0; width: 100%; }
+            .sidebar .nav-section { flex-direction: row; flex-wrap: wrap; gap: 0.2rem 0.6rem; }
+            .sidebar .nav-item { padding: 0.3rem 0.8rem; font-size: 0.8rem; }
+            .sidebar .logout { margin-top: 0; border-top: none; padding-top: 0; margin-left: auto; }
+            .main-content { padding: 1.5rem 1.2rem; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .welcome-header .actions { width: 100%; }
+            .welcome-header .actions button { flex: 1; justify-content: center; }
+        }
+        @media (max-width: 500px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .welcome-header h1 { font-size: 1.3rem; }
+            .btn-primary, .btn-outline { padding: 0.5rem 1rem; font-size: 0.8rem; }
+        }
+
+        /* ===== MODAL STYLES ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-card {
+            background: white;
+            border-radius: 2rem;
+            max-width: 800px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            position: relative;
+            animation: fadeUp 0.25s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem; right: 1.5rem;
+            font-size: 1.8rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #8a9bb5;
+            transition: 0.15s;
+        }
+        .modal-close:hover { color: #0b1a33; }
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #0b1a33;
+            margin-bottom: 1.2rem;
+            padding-right: 2rem;
+        }
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.8rem;
+            border-top: 1px solid #eef2f8;
+            padding-top: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .btn-secondary {
+            background: #e9eff6;
+            color: #1f2d44;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .btn-secondary:hover { background: #d4dfeb; }
+        .btn-download {
+            background: #1a3a62;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-download:hover { background: #0e2a4a; }
+        .btn-print {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-print:hover { background: #5a6268; }
+
+        /* ===== REQUISITION FORM (for PDF) ===== */
+        #requisitionFormContent {
+            padding: 0.5rem 0;
+        }
+        .form-header {
+            text-align: center;
+            border-bottom: 3px solid #0b1a33;
+            padding-bottom: 1.2rem;
+            margin-bottom: 1.8rem;
+        }
+        .form-header h1 {
+            color: #0b1a33;
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        .form-header p {
+            color: #6a83a2;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .form-header .form-number {
+            display: inline-block;
+            background: #0b1a33;
+            color: white;
+            padding: 0.2rem 1.5rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .form-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem 2rem;
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .form-field.full-width {
+            grid-column: 1 / -1;
+        }
+        .form-field .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #4a637f;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .form-field .value {
+            font-size: 1rem;
+            color: #0b1a33;
+            font-weight: 500;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 2px solid #d4dfeb;
+            min-height: 2.2rem;
+        }
+        .form-field .value.empty {
+            color: #b0c4d8;
+            font-weight: 300;
+        }
+        .form-field .value-filled {
+            padding: 0.4rem 0.6rem;
+            border-bottom: 2px solid #0b1a33;
+            min-height: 2.2rem;
+            font-weight: 500;
+        }
+        .form-approvals {
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 2px solid #eef2f8;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .form-approvals .approval-box {
+            border: 1px dashed #b0c4d8;
+            border-radius: 8px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .form-approvals .approval-box .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #6a83a2;
+            font-weight: 600;
+        }
+        .form-approvals .approval-box .status {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 0.3rem;
+            color: #0b1a33;
+        }
+        .form-approvals .approval-box .signature-line {
+            margin-top: 0.8rem;
+            border-top: 1px solid #0b1a33;
+            padding-top: 0.3rem;
+            font-size: 0.7rem;
+            color: #6a83a2;
+        }
+        .form-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6a83a2;
+            border-top: 1px solid #eef2f8;
+            padding-top: 1rem;
+        }
+        
+        @media print {
+            .modal-overlay { position: relative; background: white; padding: 0; }
+            .modal-card { box-shadow: none; max-width: 100%; }
+            .modal-close, .modal-footer { display: none !important; }
+            .sidebar, .main-content { display: none !important; }
+            #requisitionFormContent { display: block !important; }
+            .form-field .value { border-bottom: 2px solid #0b1a33; }
+        }
+        @media (max-width: 600px) {
+            .form-fields { grid-template-columns: 1fr; }
+            .form-approvals { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand"><i class="fas fa-bolt"></i><span>Samanga</span></div>
+        <div class="nav-section">
+            <div class="section-title">Requisitions</div>
+            <div class="nav-item active"><i class="fas fa-file-alt"></i> Submit Requisition</div>
+            <div class="nav-item"><i class="fas fa-list-ul"></i> My Requisitions</div>
+        </div>
+        <div class="nav-section">
+            <div class="section-title">Approvals</div>
+            <div class="nav-item"><i class="fas fa-user-check"></i> Supervisor Approval</div>
+            <div class="nav-item"><i class="fas fa-coins"></i> Finance Approval</div>
+            <div class="nav-item"><i class="fas fa-user-tie"></i> CEO Approval</div>
+        </div>
+        <div class="nav-section">
+            <div class="section-title">Admin</div>
+            <div class="nav-item"><i class="fas fa-users-cog"></i> Users</div>
+        </div>
+        <div class="logout"><div class="nav-item"><i class="fas fa-sign-out-alt"></i> Logout</div></div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="welcome-header">
+            <div>
+                <h1>Welcome, Administrator <small>Here is what's happening with requisitions today.</small></h1>
+            </div>
+            <div class="actions">
+                <button class="btn-outline" onclick="downloadBlankForm()"><i class="fas fa-file-pdf"></i> Download Blank Form</button>
+                <button class="btn-primary" id="newRequisitionBtn"><i class="fas fa-plus-circle"></i> New Requisition</button>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card"><div class="stat-label">Total requisitions</div><div class="stat-number" id="totalReqs">0</div><div class="stat-sub"><i class="fas fa-arrow-up" style="color:#2b7a4b;"></i> +2 this week</div></div>
+            <div class="stat-card"><div class="stat-label">Pending supervisor</div><div class="stat-number" id="pendingSup">0</div><div class="stat-sub"><i class="fas fa-clock"></i> awaiting review</div></div>
+            <div class="stat-card"><div class="stat-label">Pending finance</div><div class="stat-number" id="pendingFin">0</div><div class="stat-sub"><i class="fas fa-clock"></i> in progress</div></div>
+            <div class="stat-card"><div class="stat-label">Pending CEO</div><div class="stat-number" id="pendingCeo">0</div><div class="stat-sub"><i class="fas fa-clock"></i> final approval</div></div>
+        </div>
+
+        <div class="table-wrapper">
+            <div class="table-header">
+                <h3>Requisitions overview</h3>
+                <span class="badge-count"><i class="far fa-file-alt"></i> <span id="totalCount">0</span> total</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Department</th><th>Item</th><th>Qty</th><th>Justification</th>
+                        <th>Supervisor</th><th>Finance</th><th>CEO</th><th>Status</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="requisitionTableBody">
+                    <tr><td colspan="10" style="text-align:center; padding:2rem;">Loading requisitions...</td></tr>
+                </tbody>
+            </table>
+            <div class="footer-note">
+                <span><i class="fas fa-chevron-left"></i> Showing <span id="showingStart">1</span> to <span id="showingEnd">5</span> of <span id="totalEntries">0</span> entries <i class="fas fa-chevron-right"></i></span>
+                <span class="copy"><i class="far fa-copyright"></i> 2024 Samanga Utilities. All rights reserved.</span>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="requisitionModal">
+    <div class="modal-card">
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+        <div class="modal-title" id="modalTitle">Requisition Form</div>
+        
+        <!-- Requisition Form Content (for PDF/Print) -->
+        <div id="requisitionFormContent">
+            <div class="form-header">
+                <h1>📋 SAMANGA UTILITIES</h1>
+                <p>Official Requisition Form</p>
+                <span class="form-number" id="formNumberDisplay">REQ-0000</span>
+            </div>
+            <div class="form-fields" id="formFields">
+                <!-- Dynamic content -->
+            </div>
+            <div class="form-approvals" id="formApprovals">
+                <!-- Dynamic approval statuses -->
+            </div>
+            <div class="form-footer">
+                This is an official requisition form. Please fill all required fields.<br>
+                © 2024 Samanga Utilities. All rights reserved.
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-print" onclick="printForm()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn-download" onclick="downloadFilledForm()"><i class="fas fa-file-pdf"></i> Download Filled Form</button>
+            <button class="btn-secondary" id="modalCloseFooter">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:3000/api';
+    let currentRequisitionData = null;
+
+    // ===== LOAD DATA =====
+    document.addEventListener('DOMContentLoaded', loadRequisitions);
+
+    async function loadRequisitions() {
+        try {
+            const response = await fetch(`${API_URL}/requisitions`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            renderTable(data);
+            updateStats(data);
+        } catch (error) {
+            console.error('Error loading requisitions:', error);
+            document.getElementById('requisitionTableBody').innerHTML = 
+                `<tr><td colspan="10" style="text-align:center; padding:2rem; color:#b33;">⚠️ Could not load data. Make sure the backend server is running.</td></tr>`;
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('requisitionTableBody');
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2rem;">No requisitions found.</td></tr>`;
+            return;
+        }
+        const displayData = data.slice(0, 5);
+        displayData.forEach(r => {
+            const tr = document.createElement('tr');
+            const statusClass = r.status.toLowerCase().replace(' ', '');
+            tr.innerHTML = `
+                <td>${r.id}</td>
+                <td>${r.department}</td>
+                <td>${r.itemName}</td>
+                <td>${r.quantity}</td>
+                <td>${r.justification}</td>
+                <td><span class="status-badge ${r.supervisor_status === 'Approved' ? 'approved' : 'pending'}">${r.supervisor_status}</span></td>
+                <td><span class="status-badge ${r.finance_status === 'Approved' ? 'approved' : 'pending'}">${r.finance_status}</span></td>
+                <td><span class="status-badge ${r.ceo_status === 'Approved' ? 'approved' : 'pending'}">${r.ceo_status}</span></td>
+                <td><span class="status-badge ${statusClass}">${r.status}</span></td>
+                <td><button class="action-link" onclick="viewRequisition(${r.id})"><i class="fas fa-eye"></i> View</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+        document.getElementById('totalCount').textContent = data.length;
+        document.getElementById('totalEntries').textContent = data.length;
+        document.getElementById('showingEnd').textContent = Math.min(5, data.length);
+    }
+
+    function updateStats(data) {
+        const total = data.length;
+        const pendingSup = data.filter(r => r.supervisor_status === 'Pending').length;
+        const pendingFin = data.filter(r => r.finance_status === 'Pending').length;
+        const pendingCeo = data.filter(r => r.ceo_status === 'Pending').length;
+        document.getElementById('totalReqs').textContent = total;
+        document.getElementById('pendingSup').textContent = pendingSup;
+        document.getElementById('pendingFin').textContent = pendingFin;
+        document.getElementById('pendingCeo').textContent = pendingCeo;
+    }
+
+    // ===== NEW REQUISITION =====
+    document.getElementById('newRequisitionBtn').addEventListener('click', function() {
+        const dept = prompt('Enter department:');
+        if (!dept) return;
+        const item = prompt('Enter item name:');
+        if (!item) return;
+        const qty = prompt('Enter quantity (number):');
+        if (!qty) return;
+        const justification = prompt('Enter justification:') || '';
+
+        const newReq = {
+            department: dept,
+            itemName: item,
+            quantity: parseInt(qty) || 1,
+            justification: justification
+        };
+
+        fetch(`${API_URL}/requisitions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newReq)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(`✅ Requisition added! Number: ${data.requisitionNumber}`);
+            loadRequisitions();
+            fetch(`${API_URL}/requisitions/${data.id}`)
+                .then(res => res.json())
+                .then(req => {
+                    showForm(req);
+                });
+        })
+        .catch(error => {
+            console.error('Error adding requisition:', error);
+            alert('❌ Failed to add requisition. Check console.');
+        });
+    });
+
+    // ===== VIEW REQUISITION =====
+    async function viewRequisition(id) {
+        try {
+            const response = await fetch(`${API_URL}/requisitions/${id}`);
+            if (!response.ok) throw new Error('Failed to fetch requisition details');
+            const r = await response.json();
+            showForm(r);
+        } catch (error) {
+            console.error('Error loading requisition details:', error);
+            alert('Could not load requisition details.');
+        }
+    }
+
+    // ===== SHOW FORM IN MODAL =====
+    function showForm(r) {
+        currentRequisitionData = r;
+        document.getElementById('modalTitle').textContent = `Requisition Form`;
+        document.getElementById('formNumberDisplay').textContent = r.requisitionNumber;
+
+        document.getElementById('formFields').innerHTML = `
+            <div class="form-field"><span class="label">Requisition Number</span><div class="value-filled">${r.requisitionNumber}</div></div>
+            <div class="form-field"><span class="label">Department</span><div class="value-filled">${r.department}</div></div>
+            <div class="form-field"><span class="label">Item Name</span><div class="value-filled">${r.itemName}</div></div>
+            <div class="form-field"><span class="label">Quantity</span><div class="value-filled">${r.quantity}</div></div>
+            <div class="form-field full-width"><span class="label">Justification / Reason</span><div class="value-filled">${r.justification || '—'}</div></div>
+            <div class="form-field full-width"><span class="label">Date Submitted</span><div class="value-filled">${new Date(r.created_at).toLocaleString()}</div></div>
+        `;
+
+        document.getElementById('formApprovals').innerHTML = `
+            <div class="approval-box">
+                <div class="label">Supervisor Approval</div>
+                <div class="status">${r.supervisor_status}</div>
+                <div class="signature-line">Signature: _______________</div>
+                <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+            </div>
+            <div class="approval-box">
+                <div class="label">Finance Approval</div>
+                <div class="status">${r.finance_status}</div>
+                <div class="signature-line">Signature: _______________</div>
+                <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+            </div>
+            <div class="approval-box">
+                <div class="label">CEO Approval</div>
+                <div class="status">${r.ceo_status}</div>
+                <div class="signature-line">Signature: _______________</div>
+                <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+            </div>
+        `;
+
+        document.getElementById('requisitionModal').classList.add('active');
+    }
+
+    // ===== DOWNLOAD BLANK FORM =====
+    function downloadBlankForm() {
+        const blankData = {
+            requisitionNumber: 'REQ-_______',
+            department: '_________________',
+            itemName: '_________________',
+            quantity: '___',
+            justification: '__________________________________________________',
+            supervisor_status: 'Pending',
+            finance_status: 'Pending',
+            ceo_status: 'Pending',
+            created_at: new Date().toLocaleString()
+        };
+        
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <div id="blankFormContent" style="padding:2rem;max-width:800px;margin:0 auto;font-family:'Inter',sans-serif;">
+                <div class="form-header">
+                    <h1 style="color:#0b1a33;font-size:1.8rem;text-align:center;">📋 SAMANGA UTILITIES</h1>
+                    <p style="color:#6a83a2;text-align:center;font-size:0.9rem;">Official Requisition Form</p>
+                    <div style="text-align:center;margin-top:0.5rem;display:inline-block;background:#0b1a33;color:white;padding:0.2rem 1.5rem;border-radius:30px;font-size:0.8rem;">${blankData.requisitionNumber}</div>
+                </div>
+                <div class="form-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem 2rem;margin-top:1.5rem;">
+                    <div class="form-field"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Department</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:2.2rem;color:#b0c4d8;font-weight:300;">_________________</div></div>
+                    <div class="form-field"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Item Name</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:2.2rem;color:#b0c4d8;font-weight:300;">_________________</div></div>
+                    <div class="form-field"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Quantity</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:2.2rem;color:#b0c4d8;font-weight:300;">___</div></div>
+                    <div class="form-field"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Date</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:2.2rem;color:#b0c4d8;font-weight:300;">_______________</div></div>
+                    <div class="form-field full-width" style="grid-column:1/-1;"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Justification / Reason</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:4rem;color:#b0c4d8;font-weight:300;">__________________________________________________</div></div>
+                </div>
+                <div class="form-approvals" style="margin-top:1.5rem;padding-top:1.2rem;border-top:2px solid #eef2f8;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                    <div class="approval-box" style="border:1px dashed #b0c4d8;border-radius:8px;padding:0.8rem;text-align:center;">
+                        <div class="label" style="font-size:0.7rem;text-transform:uppercase;color:#6a83a2;font-weight:600;">Supervisor Approval</div>
+                        <div class="status" style="font-size:0.9rem;font-weight:600;margin-top:0.3rem;color:#0b1a33;">Pending</div>
+                        <div class="signature-line" style="margin-top:0.8rem;border-top:1px solid #0b1a33;padding-top:0.3rem;font-size:0.7rem;color:#6a83a2;">Signature: _______________</div>
+                        <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+                    </div>
+                    <div class="approval-box" style="border:1px dashed #b0c4d8;border-radius:8px;padding:0.8rem;text-align:center;">
+                        <div class="label" style="font-size:0.7rem;text-transform:uppercase;color:#6a83a2;font-weight:600;">Finance Approval</div>
+                        <div class="status" style="font-size:0.9rem;font-weight:600;margin-top:0.3rem;color:#0b1a33;">Pending</div>
+                        <div class="signature-line" style="margin-top:0.8rem;border-top:1px solid #0b1a33;padding-top:0.3rem;font-size:0.7rem;color:#6a83a2;">Signature: _______________</div>
+                        <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+                    </div>
+                    <div class="approval-box" style="border:1px dashed #b0c4d8;border-radius:8px;padding:0.8rem;text-align:center;">
+                        <div class="label" style="font-size:0.7rem;text-transform:uppercase;color:#6a83a2;font-weight:600;">CEO Approval</div>
+                        <div class="status" style="font-size:0.9rem;font-weight:600;margin-top:0.3rem;color:#0b1a33;">Pending</div>
+                        <div class="signature-line" style="margin-top:0.8rem;border-top:1px solid #0b1a33;padding-top:0.3rem;font-size:0.7rem;color:#6a83a2;">Signature: _______________</div>
+                        <div style="font-size:0.7rem;color:#6a83a2;">Date: _______________</div>
+                    </div>
+                </div>
+                <div class="form-footer" style="margin-top:1.5rem;text-align:center;font-size:0.75rem;color:#6a83a2;border-top:1px solid #eef2f8;padding-top:1rem;">
+                    This is an official requisition form. Please fill all required fields.<br>
+                    © 2024 Samanga Utilities. All rights reserved.
+                </div>
+            </div>
+        `;
+
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: 'SAMANGA_Requisition_Form_Blank.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // ===== DOWNLOAD FILLED FORM =====
+    function downloadFilledForm() {
+        if (!currentRequisitionData) {
+            alert('No requisition data to download.');
+            return;
+        }
+        const element = document.getElementById('requisitionFormContent');
+        const opt = {
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `Requisition_${currentRequisitionData.requisitionNumber}_Filled.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, letterRendering: true, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+
+    // ===== PRINT =====
+    function printForm() {
+        const originalTitle = document.title;
+        document.title = `Requisition_${currentRequisitionData?.requisitionNumber || 'form'}`;
+        window.print();
+        document.title = originalTitle;
+    }
+
+    // ===== CLOSE MODAL =====
+    const closeButtons = [
+        document.getElementById('modalCloseBtn'),
+        document.getElementById('modalCloseFooter')
+    ];
+    closeButtons.forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                document.getElementById('requisitionModal').classList.remove('active');
+            });
+        }
+    });
+
+    document.getElementById('requisitionModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            document.getElementById('requisitionModal').classList.remove('active');
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.getElementById('requisitionModal').classList.remove('active');
+        }
+    });
+
+    // ===== SIDEBAR NAV =====
+    document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.sidebar .nav-item').forEach(n => n.classList.remove('active'));
+            this.classList.add('active');
+            if (this.textContent.trim().includes('Logout')) {
+                alert('Logging out... (demo)');
+            } else {
+                alert(`Navigating to "${this.textContent.trim()}" (demo)`);
+            }
+        });
+    });
+</script>
+</body>
+</html>
