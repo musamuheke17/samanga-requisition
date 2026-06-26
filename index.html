@@ -387,16 +387,24 @@
 </div>
 
 <script>
-    // ========================================================
-    // 🔥 DYNAMIC API URL – Works Locally AND on Render
-    // ========================================================
-    const API_URL = window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000/api' 
+    // ============================================================
+    // 🔥 DYNAMIC API URL – Works Locally AND on Render Web Service
+    // ============================================================
+    // If you're on localhost (development), use localhost:3000
+    // If you're on Render (production), use relative path /api
+    // ============================================================
+    const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000/api'
         : '/api';
     
-    // ========================================================
+    // If your Render service has a custom name, use this instead:
+    // const API_URL = 'https://samanga-requisition.onrender.com/api';
+
+    console.log('🔗 API_URL:', API_URL); // This will show in console for debugging
+
+    // ============================================================
     // 🚀 REST OF YOUR JAVASCRIPT (unchanged)
-    // ========================================================
+    // ============================================================
     
     let currentRequisitionData = null;
 
@@ -404,15 +412,20 @@
 
     async function loadRequisitions() {
         try {
+            console.log('📡 Fetching from:', `${API_URL}/requisitions`);
             const response = await fetch(`${API_URL}/requisitions`);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
+            console.log('✅ Data loaded:', data.length, 'requisitions');
             renderTable(data);
             updateStats(data);
         } catch (error) {
-            console.error('Error loading requisitions:', error);
+            console.error('❌ Error loading requisitions:', error);
             document.getElementById('requisitionTableBody').innerHTML = 
-                `<tr><td colspan="10" style="text-align:center; padding:2rem; color:#b33;">⚠️ Could not load data. Make sure the backend server is running.</td></tr>`;
+                `<tr><td colspan="10" style="text-align:center; padding:2rem; color:#b33;">
+                    ⚠️ Could not load data. Make sure the backend server is running.<br>
+                    <small style="color:#666;">API URL: ${API_URL}</small>
+                </td></tr>`;
         }
     }
 
@@ -489,7 +502,7 @@
                 });
         })
         .catch(error => {
-            console.error('Error adding requisition:', error);
+            console.error('❌ Error adding requisition:', error);
             alert('❌ Failed to add requisition. Check console.');
         });
     });
