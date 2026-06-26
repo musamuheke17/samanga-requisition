@@ -230,10 +230,6 @@
             border-bottom: 2px solid #d4dfeb;
             min-height: 2.2rem;
         }
-        .form-field .value.empty {
-            color: #b0c4d8;
-            font-weight: 300;
-        }
         .form-field .value-filled {
             padding: 0.4rem 0.6rem;
             border-bottom: 2px solid #0b1a33;
@@ -368,19 +364,14 @@
         <button class="modal-close" id="modalCloseBtn">&times;</button>
         <div class="modal-title" id="modalTitle">Requisition Form</div>
         
-        <!-- Requisition Form Content (for PDF/Print) -->
         <div id="requisitionFormContent">
             <div class="form-header">
                 <h1>📋 SAMANGA UTILITIES</h1>
                 <p>Official Requisition Form</p>
                 <span class="form-number" id="formNumberDisplay">REQ-0000</span>
             </div>
-            <div class="form-fields" id="formFields">
-                <!-- Dynamic content -->
-            </div>
-            <div class="form-approvals" id="formApprovals">
-                <!-- Dynamic approval statuses -->
-            </div>
+            <div class="form-fields" id="formFields"></div>
+            <div class="form-approvals" id="formApprovals"></div>
             <div class="form-footer">
                 This is an official requisition form. Please fill all required fields.<br>
                 © 2024 Samanga Utilities. All rights reserved.
@@ -396,10 +387,19 @@
 </div>
 
 <script>
-    const API_URL = 'http://localhost:3000/api';
+    // ========================================================
+    // 🔥 DYNAMIC API URL – Works Locally AND on Render
+    // ========================================================
+    const API_URL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/api' 
+        : '/api';
+    
+    // ========================================================
+    // 🚀 REST OF YOUR JAVASCRIPT (unchanged)
+    // ========================================================
+    
     let currentRequisitionData = null;
 
-    // ===== LOAD DATA =====
     document.addEventListener('DOMContentLoaded', loadRequisitions);
 
     async function loadRequisitions() {
@@ -457,7 +457,6 @@
         document.getElementById('pendingCeo').textContent = pendingCeo;
     }
 
-    // ===== NEW REQUISITION =====
     document.getElementById('newRequisitionBtn').addEventListener('click', function() {
         const dept = prompt('Enter department:');
         if (!dept) return;
@@ -495,7 +494,6 @@
         });
     });
 
-    // ===== VIEW REQUISITION =====
     async function viewRequisition(id) {
         try {
             const response = await fetch(`${API_URL}/requisitions/${id}`);
@@ -508,7 +506,6 @@
         }
     }
 
-    // ===== SHOW FORM IN MODAL =====
     function showForm(r) {
         currentRequisitionData = r;
         document.getElementById('modalTitle').textContent = `Requisition Form`;
@@ -547,27 +544,14 @@
         document.getElementById('requisitionModal').classList.add('active');
     }
 
-    // ===== DOWNLOAD BLANK FORM =====
     function downloadBlankForm() {
-        const blankData = {
-            requisitionNumber: 'REQ-_______',
-            department: '_________________',
-            itemName: '_________________',
-            quantity: '___',
-            justification: '__________________________________________________',
-            supervisor_status: 'Pending',
-            finance_status: 'Pending',
-            ceo_status: 'Pending',
-            created_at: new Date().toLocaleString()
-        };
-        
         const element = document.createElement('div');
         element.innerHTML = `
             <div id="blankFormContent" style="padding:2rem;max-width:800px;margin:0 auto;font-family:'Inter',sans-serif;">
                 <div class="form-header">
                     <h1 style="color:#0b1a33;font-size:1.8rem;text-align:center;">📋 SAMANGA UTILITIES</h1>
                     <p style="color:#6a83a2;text-align:center;font-size:0.9rem;">Official Requisition Form</p>
-                    <div style="text-align:center;margin-top:0.5rem;display:inline-block;background:#0b1a33;color:white;padding:0.2rem 1.5rem;border-radius:30px;font-size:0.8rem;">${blankData.requisitionNumber}</div>
+                    <div style="text-align:center;margin-top:0.5rem;display:inline-block;background:#0b1a33;color:white;padding:0.2rem 1.5rem;border-radius:30px;font-size:0.8rem;">REQ-_______</div>
                 </div>
                 <div class="form-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem 2rem;margin-top:1.5rem;">
                     <div class="form-field"><span class="label" style="font-size:0.75rem;text-transform:uppercase;color:#4a637f;font-weight:600;">Department</span><div class="value" style="border-bottom:2px solid #0b1a33;padding:0.4rem 0.6rem;min-height:2.2rem;color:#b0c4d8;font-weight:300;">_________________</div></div>
@@ -613,7 +597,6 @@
         html2pdf().set(opt).from(element).save();
     }
 
-    // ===== DOWNLOAD FILLED FORM =====
     function downloadFilledForm() {
         if (!currentRequisitionData) {
             alert('No requisition data to download.');
@@ -630,7 +613,6 @@
         html2pdf().set(opt).from(element).save();
     }
 
-    // ===== PRINT =====
     function printForm() {
         const originalTitle = document.title;
         document.title = `Requisition_${currentRequisitionData?.requisitionNumber || 'form'}`;
@@ -638,7 +620,6 @@
         document.title = originalTitle;
     }
 
-    // ===== CLOSE MODAL =====
     const closeButtons = [
         document.getElementById('modalCloseBtn'),
         document.getElementById('modalCloseFooter')
@@ -663,7 +644,6 @@
         }
     });
 
-    // ===== SIDEBAR NAV =====
     document.querySelectorAll('.sidebar .nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
